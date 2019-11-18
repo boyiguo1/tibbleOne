@@ -95,12 +95,13 @@ tibble_one.svydesign <- function(
   formula = NULL,
   meta_data = NULL,
   row_vars = NULL,
-  strat = NULL,
-  by = NULL,
+#  strat = NULL,
+#  by = NULL,
   specs_table_vals = NULL,
   specs_table_tests = NULL,
   include_pval=FALSE,
   expand_binary_catgs = FALSE,
+  # TODO: decide if incclude_freq makes sense for weighted version
   include_freq = FALSE,
   add_perc_to_cats = TRUE
 ){
@@ -132,10 +133,17 @@ tibble_one.svydesign <- function(
     )
   }
 
+  # TODO: Error prevention here. Check if dstrat$strata is null
   row_vars <- tb1_vars$row_vars
-  # how to combine the strat/by in tibble one with strata in surveydesign
-  strat <- tb1_vars$strat
-  by <- tb1_vars$by
+  strat <- dstrat$strata %>% names()
+  by <- NULL
+  # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
+
+
+  # TODO: Decide if we want to keep strat and by in the weighted setting
+  # Currently, do not
+#  strat <- tb1_vars$strat
+#  by <- tb1_vars$by
 
   if(vec_is_empty(row_vars)){
     stop("There should be at least 1 row_var")
@@ -242,7 +250,8 @@ tibble_one.svydesign <- function(
     if ( spec_means && spec_medns ) {
 
       paste(
-        "Table values for continuous variables are mean (standard deviation)",
+        # Note: change the wroding from "(standard deviation)" to "(standard error)"
+        "Table values for continuous variables are mean (standard error)",
         "or median [interquartile range]. Table values for categorical",
         "variables are", if(include_freq) "count (percent)." else "percent."
       )
@@ -250,7 +259,8 @@ tibble_one.svydesign <- function(
     } else if (spec_means && !spec_medns) {
 
       paste(
-        "Table values are mean (standard deviation) and",
+        # Note: change the wroding from "(standard deviation)" to "(standard error)"
+        "Table values are mean (standard error) and",
         if(include_freq) "count (percent)" else "percent",
         "for continuous and categorical variables, respectively."
       )
@@ -401,7 +411,9 @@ tibble_one.svydesign <- function(
       tbl_val = pmap(
         .l = list(variable, type, fun_descr, test_descr),
         .f = function(.variable, .var_type, .fun_type, .test_type){
+          # create a svydesigned version of gen_tbl_value_svydesign
           gen_tbl_value(
+            # TODO: should be just changing the data to svydesign
             data = tbl_data,
             variable = .variable,
             var_type = .var_type,
