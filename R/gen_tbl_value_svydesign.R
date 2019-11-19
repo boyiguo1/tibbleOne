@@ -70,14 +70,23 @@ ctns_tbl_value.svydesign <- function(
 
   vals_overall = ctns_fun(svy, variable)
 
+  tmp <- 0
   if(stratified_table){
-    tmp <- 0
-    vals_by_group = tapply(
-      data[[variable]],
-      data[['.strat']],
-      ctns_fun
-    )
-
+    # vals_by_group = tapply(
+    #   data[[variable]],
+    #   data[['.strat']],
+    #   ctns_fun
+    # )
+    strata <- svy$strata %>% names()
+    vals_by_group <- survey::svyby(survey::make.formula(variable),
+                                   survey::make.formula(strata),
+                                   svy, svymean) %>%
+                      dplyr::rename( mean = !!quo(variable)) %>%
+                      dplyr::transmute(trt,
+                                       output = paste0(adapt_round(mean), ' (',
+                                                    adapt_round(se), ')')) %>%
+      spread(trt, output)
+    #%>% array
   }
 
   if(stratified_table & include_pval){
@@ -100,7 +109,7 @@ ctns_tbl_value.svydesign <- function(
 
   }
 
-  vibble(vals)
+  vibble(vals %>% unlist())
 
 }
 

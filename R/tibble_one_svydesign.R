@@ -445,7 +445,7 @@ tibble_one.svydesign <- function(
     }
   }
 
-  table_data %<>% bind_rows(descr_row, .)
+  # table_data %<>% bind_rows(descr_row, .)
 
   if( meta$add_perc_to_cats && include_freq ){
 
