@@ -1,8 +1,7 @@
 
 
-weighted_gen_tbl_value <- function(
-  data,
-  wegiht,
+gen_tbl_value.svydesign <- function(
+  svy,
   variable,
   var_type,
   fun_type,
@@ -10,17 +9,16 @@ weighted_gen_tbl_value <- function(
   stratified_table,
   include_pval,
   include_freq,
-  expand_binary_catgs,
-  weight
+  expand_binary_catgs
 ){
 
   if(var_type %in% c('numeric','integer')){
 
     ctns_fun <- switch(
       EXPR = fun_type,
-      "mean" = mean_sd,
+      "mean" = mean_sd.svy,
       "median" = median_iqr,
-      mean_sd
+      mean_sd.svy
     )
 
     pval_fun <- switch(
@@ -30,28 +28,27 @@ weighted_gen_tbl_value <- function(
       cmp_pval_params
     )
 
-    output <- weighted_ctns_tbl_value(
-      data = data,
-      weight = weight,
+    output <- ctns_tbl_value.svydesign(
+      svy = svy,
       variable = variable,
       ctns_fun = ctns_fun,
       pval_fun = pval_fun,
-      include_pval = F,
+      include_pval = include_pval,
       stratified_table = stratified_table
     )
 
     return(output)
 
   }
-
+  # TODO: havn't modified for categorical data
   if(var_type %in% c('factor')){
 
-    output <- weighted_catg_tbl_value(
+    output <- catg_tbl_value(
       variable = variable,
       data = data,
       stratified_table = stratified_table,
       include_pval=include_pval,
-      include_freq = F,
+      include_freq = include_freq,
       expand_binary_catgs=expand_binary_catgs
     )
 
@@ -62,9 +59,8 @@ weighted_gen_tbl_value <- function(
 }
 
 
-weighted_ctns_tbl_value <- function(
-  data,
-  weight,
+ctns_tbl_value.svydesign <- function(
+  svy,
   variable,
   ctns_fun,
   pval_fun,
@@ -72,17 +68,14 @@ weighted_ctns_tbl_value <- function(
   include_pval
 ){
 
-  vals_overall = ctns_fun(data[[variable]], weight)
+  vals_overall = ctns_fun(svy, variable)
 
   if(stratified_table){
-
+    tmp <- 0
     vals_by_group = tapply(
       data[[variable]],
       data[['.strat']],
-      ctns_fun#,
-      # weight only affects calcualting SEs, so currently ignored
-      # Since the weight would be same in the group, so it would be meaningless to
-      #weight = weight
+      ctns_fun
     )
 
   }
@@ -123,16 +116,17 @@ median_iqr <- function(variable){
 
 }
 
-mean_sd<-function(variable, weight){
+mean_sd.svy<-function(svy, variable_name){
 
-  .mn <- try(weighted.mean(variable, weight, na.rm = TRUE))
-  if(class(.mn)[1] == 'try-error') .mn <- "NA"
+  res <- try(survey::svymean(survey::make.formula(variable_name), svy, na.rm = TRUE))
+  # Cautious: no error prevention here
+  #  if(class(.mn)[1] == 'try-error') .mn <- "NA"
 
-  #.sd <- try(sd(variable, na.rm = TRUE))
-  #if(class(.sd)[1] == 'try-error') .sd <- "NA"
+  # .se <- try(sd(variable, na.rm = TRUE))
+  # if(class(.sd)[1] == 'try-error') .sd <- "NA"
 
   paste0(
-    adapt_round(.mn)#, ' (', adapt_round(.sd), ')'
+    adapt_round(res), ' (', adapt_round(survey::SE(res)), ')'
   )
 
 }
@@ -176,7 +170,7 @@ cmp_pval_noparm <- function(data, variable, ngrps){
 
 }
 
-weighted_catg_tbl_value <- function(
+catg_tbl_value <- function(
   variable,
   data,
   stratified_table,

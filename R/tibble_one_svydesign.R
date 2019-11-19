@@ -65,15 +65,19 @@
 #'
 #' @examples
 #' data("pbc_tbl1")
+#'
+#' new.dat <- pbc_tbl1 %>% filter(!is.na(trt)) %>%
+#' left_join(data.frame(trt = levels(new.dat$trt), prob = c(0.9, 0.2)))
+#'
+#' dgn <- svydesign(~1, probs = ~prob, strata = ~trt, data = new.dat)
+#'
 #' # report median albumin instead of mean
 #' # use kruskal wallis test for albumin
-#' tibble_one(
+#' tibble_one.svydesign(
 #'   pbc_tbl1,
 #'   formula = ~ . | trt,
 #'   include_freq = FALSE,
-#'   include_pval = TRUE,
-#'   specs_table_vals = c(albumin = 'median'),
-#'   specs_table_tests = c(albumin = 'nopars')
+#'   include_pval = TRUE
 #' )
 #'
 
@@ -107,7 +111,6 @@ tibble_one.svydesign <- function(
 ){
 
   data <- svydesign$variables
-
   # Identify row, stratification, and by variables
   if( !is.null(formula) ){
 
@@ -117,8 +120,8 @@ tibble_one.svydesign <- function(
 
     tb1_vars <- list(
       row_vars = vars_select(colnames(data), !!enquo(row_vars)),
-      strat = vars_select(colnames(data), !!enquo(strat)),
-      by = vars_select(colnames(data), !!enquo(by))
+      # strat = vars_select(colnames(data), !!enquo(strat)),
+      # by = vars_select(colnames(data), !!enquo(by))
     ) %>%
       map(
         .f = function(x){
@@ -135,7 +138,7 @@ tibble_one.svydesign <- function(
 
   # TODO: Error prevention here. Check if dstrat$strata is null
   row_vars <- tb1_vars$row_vars
-  strat <- dstrat$strata %>% names()
+  strat <- svydesign$strata %>% names()
   by <- NULL
   # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
 
@@ -412,9 +415,9 @@ tibble_one.svydesign <- function(
         .l = list(variable, type, fun_descr, test_descr),
         .f = function(.variable, .var_type, .fun_type, .test_type){
           # create a svydesigned version of gen_tbl_value_svydesign
-          gen_tbl_value(
+          gen_tbl_value.svydesign(
             # TODO: should be just changing the data to svydesign
-            data = tbl_data,
+            svy = svydesign,
             variable = .variable,
             var_type = .var_type,
             fun_type = .fun_type,
