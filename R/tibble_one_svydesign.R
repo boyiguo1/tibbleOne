@@ -73,11 +73,9 @@
 #'
 #' # report median albumin instead of mean
 #' # use kruskal wallis test for albumin
-#' tibble_one.svydesign(
-#'   pbc_tbl1,
-#'   formula = ~ . | trt,
-#'   include_freq = FALSE,
-#'   include_pval = TRUE
+#' tmp <- tibble_one.svydesign(
+#'
+#'
 #' )
 #'
 
@@ -103,9 +101,11 @@ tibble_one.svydesign <- function(
 #  by = NULL,
   specs_table_vals = NULL,
   specs_table_tests = NULL,
+  # TODO: should take out include_pval for now, since it makes to much work
   include_pval=FALSE,
   expand_binary_catgs = FALSE,
-  # TODO: decide if incclude_freq makes sense for weighted version
+  # TODO: decide if include_freq makes sense for weighted version
+  # TODO: on 20191211 thought better to remove it.
   include_freq = FALSE,
   add_perc_to_cats = TRUE
 ){
@@ -416,7 +416,6 @@ tibble_one.svydesign <- function(
         .f = function(.variable, .var_type, .fun_type, .test_type){
           # create a svydesigned version of gen_tbl_value_svydesign
           gen_tbl_value.svydesign(
-            # TODO: should be just changing the data to svydesign
             svy = svydesign,
             variable = .variable,
             var_type = .var_type,

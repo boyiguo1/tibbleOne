@@ -32,6 +32,7 @@ gen_tbl_value.svydesign <- function(
       svy = svy,
       variable = variable,
       ctns_fun = ctns_fun,
+      fun_type = fun_type,
       pval_fun = pval_fun,
       include_pval = include_pval,
       stratified_table = stratified_table
@@ -43,16 +44,18 @@ gen_tbl_value.svydesign <- function(
   # TODO: havn't modified for categorical data
   if(var_type %in% c('factor')){
 
-    output <- catg_tbl_value(
-      variable = variable,
-      data = data,
-      stratified_table = stratified_table,
-      include_pval=include_pval,
-      include_freq = include_freq,
-      expand_binary_catgs=expand_binary_catgs
-    )
-
-    return(output)
+    warning("Do not finish yet")
+    # output <- catg_tbl_value(
+    #   svy = svy
+    #   variable = variable,
+    #   data = data,
+    #   stratified_table = stratified_table,
+    #   include_pval=include_pval,
+    #   include_freq = include_freq,
+    #   expand_binary_catgs=expand_binary_catgs
+    # )
+    #
+    # return(output)
 
   }
 
@@ -63,6 +66,7 @@ ctns_tbl_value.svydesign <- function(
   svy,
   variable,
   ctns_fun,
+  fun_type,
   pval_fun,
   stratified_table,
   include_pval
@@ -83,15 +87,15 @@ ctns_tbl_value.svydesign <- function(
           "mean" = {survey::svyby(survey::make.formula(variable),
                                  survey::make.formula(strata),
                                  svy, survey::svymean) %>%
-            dplyr::rename( mean = !!quo(variable)) %>%
+            dplyr::rename( mean = !!rlang::quo(variable)) %>%
             dplyr::transmute(trt,
                              output = paste0(adapt_round(mean), ' (',
                                              adapt_round(se), ')')) %>%
             spread(trt, output)},
           "median" = {survey::svyby(survey::make.formula(variable),
                                     survey::make.formula(strata),
-                                    svy, survey::svyquantile, quantiles=c(0.25,0.5, 0.75)) %>%
-              dplyr::rename( mean = !!quo(variable)) %>%
+                                    svy, survey::svyquantile, quantiles=c(0.25,0.5, 0.75), ci=T) %>%
+              dplyr::rename( mean = !!rlang::quo(variable)) %>%
               dplyr::transmute(trt,
                                output = paste0(adapt_round(mean), ' (',
                                                adapt_round(se), ')')) %>%
@@ -99,7 +103,7 @@ ctns_tbl_value.svydesign <- function(
           {survey::svyby(survey::make.formula(variable),
                         survey::make.formula(strata),
                         svy, survey::svymean, quantiles=c(0.25,0.5, 0.75)) %>%
-            dplyr::rename( mean = !!quo(variable)) %>%
+            dplyr::rename( mean = !!rlang::quo(variable)) %>%
             dplyr::transmute(trt,
                              output = paste0(adapt_round(mean), ' (',
                                              adapt_round(se), ')')) %>%
