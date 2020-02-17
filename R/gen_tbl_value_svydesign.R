@@ -44,18 +44,18 @@ gen_tbl_value.svydesign <- function(
   # TODO: havn't modified for categorical data
   if(var_type %in% c('factor')){
 
-    warning("Do not finish yet")
-    # output <- catg_tbl_value(
-    #   svy = svy
-    #   variable = variable,
-    #   data = data,
-    #   stratified_table = stratified_table,
-    #   include_pval=include_pval,
-    #   include_freq = include_freq,
-    #   expand_binary_catgs=expand_binary_catgs
-    # )
-    #
-    # return(output)
+    # warning("Do not finish yet")
+    output <- catg_tbl_value.svydesign(
+      svy = svy,
+      variable = variable,
+      data = data,
+      stratified_table = stratified_table,
+      include_pval=include_pval,
+      include_freq = include_freq,
+      expand_binary_catgs=expand_binary_catgs
+    )
+
+    return(output)
 
   }
 
@@ -204,7 +204,8 @@ cmp_pval_noparm <- function(data, variable, ngrps){
 
 }
 
-catg_tbl_value <- function(
+catg_tbl_value.svydesign <- function(
+  svy,
   variable,
   data,
   stratified_table,
@@ -214,19 +215,24 @@ catg_tbl_value <- function(
   include.missinf=FALSE
 ){
 
-  counts_overall <- table(data[[variable]])
+  # TODO: improve this to accomadate non weight strat
+  strata <- svy$strata %>% names()
+
+  # TODO: round the estimate to integer
+  counts_overall <- survey::svytable(survey::make.formula(variable), svy) %>% round()
   propts_overall <- adapt_round(100*prop.table(counts_overall))
 
   n_groups <- length(counts_overall)
 
   if(stratified_table){
 
-    counts_by_group = table(
-      data[[variable]],
-      data[['.strat']]
-    )
+    counts_by_group <- survey::svytable(
+      survey::make.formula(c(variable, strata)),
+      # survey::make.formula(strata),
+      svy
+    ) %>% round()
 
-    propts_by_group = adapt_round(
+    propts_by_group <- adapt_round(
       100 * prop.table(counts_by_group, margin = 2)
     )
 

@@ -78,8 +78,8 @@
 #' # report median albumin instead of mean
 #' # use kruskal wallis test for albumin
 #' tmp <- tibble_one.svydesign(
-#'   svydesign = dgn,
-#'   formula = ~ age | trt,
+#'   svy_data = dgn,
+#'   formula = ~ sex | trt,
 #'   expand_binary_catgs = FALSE,
 #' )
 #'
