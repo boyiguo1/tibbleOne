@@ -66,16 +66,21 @@
 #' @examples
 #' data("pbc_tbl1")
 #'
-#' new.dat <- pbc_tbl1 %>% filter(!is.na(trt)) %>%
-#' left_join(data.frame(trt = levels(new.dat$trt), prob = c(0.9, 0.2)))
+#' pbc_tbl1 %>% filter(!is.na(trt)) %>%
+#'  left_join(
+#'      data.frame(trt = levels(.$trt),
+#'         prob = c(0.9, 0.2)
+#'      )
+#'  ) -> new.dat
 #'
-#' dgn <- svydesign(~1, probs = ~prob, strata = ~trt, data = new.dat)
+#' dgn <- survey::svydesign(~1, probs = ~prob, strata = ~trt, data = new.dat)
 #'
 #' # report median albumin instead of mean
 #' # use kruskal wallis test for albumin
 #' tmp <- tibble_one.svydesign(
-#'
-#'
+#'   svydesign = dgn,
+#'   formula = ~ age | trt,
+#'   expand_binary_catgs = FALSE,
 #' )
 #'
 
@@ -93,7 +98,8 @@
 # include_freq = FALSE
 
 tibble_one.svydesign <- function(
-  svydesign,
+  #TODO: change the variable name from svydeisgn to svy_data
+  svy_data,
   formula = NULL,
   meta_data = NULL,
   row_vars = NULL,
@@ -110,7 +116,13 @@ tibble_one.svydesign <- function(
   add_perc_to_cats = TRUE
 ){
 
-  data <- svydesign$variables
+  #TODO: Error prevention: if svy_data isnot a svydesign object, reprot error
+
+
+  # fetch the raw data from the suvdesign object
+  #TODO: Decide if we need to keep the prob variable/ sampling weight in the varibale
+  data <- svy_data$variables
+
   # Identify row, stratification, and by variables
   if( !is.null(formula) ){
 
@@ -136,23 +148,19 @@ tibble_one.svydesign <- function(
     )
   }
 
-  # TODO: Error prevention here. Check if dstrat$strata is null
+  # TODO: Error prevention here. Check if strata is null
   row_vars <- tb1_vars$row_vars
-  strat <- svydesign$strata %>% names()
+  strat <- svy_data$strata %>% names()
   by <- NULL
-  # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
 
-
-  # TODO: Decide if we want to keep strat and by in the weighted setting
-  # Currently, do not
-#  strat <- tb1_vars$strat
-#  by <- tb1_vars$by
+    # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
 
   if(vec_is_empty(row_vars)){
     stop("There should be at least 1 row_var")
   }
 
-
+  # Error prevention to exam if all values are missing
+  # TODO: probably needs more
   for(variable in c(row_vars, strat, by)){
 
     if(all(is.na(data[[variable]]))){
@@ -416,7 +424,7 @@ tibble_one.svydesign <- function(
         .f = function(.variable, .var_type, .fun_type, .test_type){
           # create a svydesigned version of gen_tbl_value_svydesign
           gen_tbl_value.svydesign(
-            svy = svydesign,
+            svy = svy_data,
             variable = .variable,
             var_type = .var_type,
             fun_type = .fun_type,

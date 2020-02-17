@@ -139,7 +139,8 @@ ctns_tbl_value.svydesign <- function(
 median_iqr.svy <- function(svy, variable_name){
 
 
-  vals <- survey::svyquantile(survey::make.formula(variable_name), svy, quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
+  vals <- survey::svyquantile(survey::make.formula(variable_name), svy,
+                              quantiles = c(0.25, 0.50, 0.75), na.rm = TRUE)
 
   paste0(
     adapt_round(vals[2]), " [",
@@ -213,8 +214,8 @@ catg_tbl_value <- function(
   include.missinf=FALSE
 ){
 
-  counts_overall = table(data[[variable]])
-  propts_overall = adapt_round(100*prop.table(counts_overall))
+  counts_overall <- table(data[[variable]])
+  propts_overall <- adapt_round(100*prop.table(counts_overall))
 
   n_groups <- length(counts_overall)
 
