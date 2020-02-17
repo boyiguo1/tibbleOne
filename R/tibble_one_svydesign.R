@@ -81,8 +81,9 @@
 #' # use kruskal wallis test for albumin
 #' tmp <- tibble_one.svydesign(
 #'   svy_data = dgn,
-#'   formula = ~ sex | trt,
+#'   formula = ~ . | trt,
 #'   expand_binary_catgs = FALSE,
+#'   include_pval = FALSE
 #' )
 #'
 
@@ -100,7 +101,6 @@
 # include_freq = FALSE
 
 tibble_one.svydesign <- function(
-  #TODO: change the variable name from svydeisgn to svy_data
   svy_data,
   formula = NULL,
   meta_data = NULL,
@@ -109,11 +109,8 @@ tibble_one.svydesign <- function(
 #  by = NULL,
   specs_table_vals = NULL,
   specs_table_tests = NULL,
-  # TODO: should take out include_pval for now, since it makes to much work
   include_pval=FALSE,
   expand_binary_catgs = FALSE,
-  # TODO: decide if include_freq makes sense for weighted version
-  # TODO: on 20191211 thought better to remove it.
   include_freq = FALSE,
   add_perc_to_cats = TRUE
 ){
@@ -296,6 +293,16 @@ tibble_one.svydesign <- function(
     Overall = nrow(data)
   )
 
+  # Create weighted sample size values
+  # TODO: find a more reliable way to calculate the weighted total sample size
+  # At least check if strat is not null
+  n_obs_wgt <- c(
+    group = 'None',
+    variable = 'N_weight',
+    labels = 'Weighted N',
+    Overall = svytable(make.formula(strat), svy_data) %>% sum %>% round
+  )
+
   # make adjustments to table parameters
   # based on whether or not a stratification
   # variable was specified. Initialize empty
@@ -347,9 +354,12 @@ tibble_one.svydesign <- function(
 
     # count the number of participants in each strata
     strat_table <- table(data[[strat]])
+    strat_table_wgt <- survey::svytable(make.formula(strat), svy_data) %>% round()
 
     # add the counts of participants in each strata to the n_obs vector
     n_obs %<>% c(strat_table)
+    n_obs_wgt %<>% c(strat_table_wgt)
+
 
     # formalize information about strata with a list
     strat_data = list(
@@ -373,10 +383,14 @@ tibble_one.svydesign <- function(
   }
 
   # modify n_obs vector to include p-value label if needed
-  if( include_pval ){ n_obs %<>% c("P-value" = '') }
+  if( include_pval ) {
+    n_obs %<>% c("P-value" = '')
+    n_obs_wgt %<>% c("P-value" = '')
+  }
 
   # the top row of the table is initialized here (descr = descriptive)
   descr_row <- vibble(n_obs)
+  n_wgt_row <- vibble(n_obs_wgt)
 
   # the original data is modified for computing table values
   # .strat is the stratifying variable
@@ -454,7 +468,8 @@ tibble_one.svydesign <- function(
     }
   }
 
-  # table_data %<>% bind_rows(descr_row, .)
+ # TODO: move n_wgt_row the first row in the table
+ table_data %<>% bind_rows(descr_row, n_wgt_row, .)
 
   if( meta$add_perc_to_cats && include_freq ){
 
