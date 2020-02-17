@@ -64,6 +64,8 @@
 #' @export
 #'
 #' @examples
+#' library(tidyverse)
+#'
 #' data("pbc_tbl1")
 #'
 #' pbc_tbl1 %>% filter(!is.na(trt)) %>%

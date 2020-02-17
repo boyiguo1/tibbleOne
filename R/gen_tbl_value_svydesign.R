@@ -23,9 +23,9 @@ gen_tbl_value.svydesign <- function(
 
     pval_fun <- switch(
       EXPR = test_type,
-      "params" = cmp_pval_params,
-      "noparm" = cmp_pval_noparm,
-      cmp_pval_params
+      "params" = cmp_pval_params.svy,
+      "noparm" = cmp_pval_noparm.svy,
+      cmp_pval_params.svy
     )
 
     output <- ctns_tbl_value.svydesign(
@@ -48,7 +48,7 @@ gen_tbl_value.svydesign <- function(
     output <- catg_tbl_value.svydesign(
       svy = svy,
       variable = variable,
-      data = data,
+      # data = data,
       stratified_table = stratified_table,
       include_pval=include_pval,
       include_freq = include_freq,
@@ -88,6 +88,7 @@ ctns_tbl_value.svydesign <- function(
                                  survey::make.formula(strata),
                                  svy, survey::svymean) %>%
             dplyr::rename( mean = !!rlang::quo(variable)) %>%
+            # TODO: make sure the trt is part of the data or it should be strata
             dplyr::transmute(trt,
                              output = paste0(adapt_round(mean), ' (',
                                              adapt_round(se), ')')) %>%
@@ -115,7 +116,7 @@ ctns_tbl_value.svydesign <- function(
   if(stratified_table & include_pval){
 
     pval <- pval_fun(
-      data = data,
+      data = svy, #data,
       variable = variable,
       ngrps = length(vals_by_group)
     )
@@ -165,49 +166,51 @@ mean_sd.svy<-function(svy, variable_name){
 
 }
 
-cmp_pval_params <- function(data, variable, ngrps) {
+cmp_pval_params.svy <- function(data, variable, ngrps) {
+  stop("'cmp_pval_params.svy' has not been implemented yet")
 
-  if( ngrps == 2 ){
-
-    t.test(data[[variable]] ~ data[['.strat']]) %>%
-      use_series("p.value") %>%
-      edit_pval()
-
-  } else {
-
-    as.formula(paste(variable,'~ .strat'))%>%
-      lm(data=data) %>%
-      anova() %>%
-      .[1,ncol(.)] %>%
-      edit_pval()
-
-  }
+  # if( ngrps == 2 ){
+  #
+  #   t.test(data[[variable]] ~ data[['.strat']]) %>%
+  #     use_series("p.value") %>%
+  #     edit_pval()
+  #
+  # } else {
+  #
+  #   as.formula(paste(variable,'~ .strat'))%>%
+  #     lm(data=data) %>%
+  #     anova() %>%
+  #     .[1,ncol(.)] %>%
+  #     edit_pval()
+  #
+  # }
 }
 
-cmp_pval_noparm <- function(data, variable, ngrps){
+cmp_pval_noparm.svy <- function(data, variable, ngrps){
+  stop("'cmp_pval_noparm.svy' has not been implemented yet")
 
-  if( ngrps == 2 ){
-
-    wilcox.test(data[[variable]] ~ data[['.strat']]) %>%
-      magrittr::use_series("p.value") %>%
-      edit_pval()
-
-  } else {
-
-    paste(variable,'~ .strat') %>%
-      as.formula()%>%
-      kruskal.test(data=data) %>%
-      use_series("p.value") %>%
-      edit_pval()
-
-  }
+  # if( ngrps == 2 ){
+  #
+  #   wilcox.test(data[[variable]] ~ data[['.strat']]) %>%
+  #     magrittr::use_series("p.value") %>%
+  #     edit_pval()
+  #
+  # } else {
+  #
+  #   paste(variable,'~ .strat') %>%
+  #     as.formula()%>%
+  #     kruskal.test(data=data) %>%
+  #     use_series("p.value") %>%
+  #     edit_pval()
+  #
+  # }
 
 }
 
 catg_tbl_value.svydesign <- function(
   svy,
   variable,
-  data,
+ # data,
   stratified_table,
   include_pval=TRUE,
   include_freq=FALSE,
