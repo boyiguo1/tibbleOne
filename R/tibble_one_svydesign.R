@@ -121,12 +121,18 @@ tibble_one.svydesign <- function(
 
   #TODO: Error prevention: if svy_data isnot a svydesign object, reprot error
 
-
   # fetch the raw data from the suvdesign object
   data <- svy_data$variables
   # Removing survey design information (sampling prob) from original dataset
+  # TODO: consider to remove it from the rowvars rather from the data, it would be saver if user
+  # minus this survey sampling variable in the formula
   if(!is.null(svy_data$allprob)) var_to_remove <- names(svy_data$allprob)
   if(var_to_remove %in% names(data)) data %<>% select(-!!enquo(var_to_remove))
+
+  # save up the strata name in the used in the survey design
+  # This may coincide with the strata argument
+  # It is possible this is null, be cautious
+  wgt_strata_name <- svy_data$strata %>% names
 
   # Identify row, stratification, and by variables
   if( !is.null(formula) ){
@@ -158,16 +164,15 @@ tibble_one.svydesign <- function(
   strat <- svy_data$strata %>% names()
   by <- NULL
 
-    # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
+  # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
 
   if(vec_is_empty(row_vars)){
     stop("There should be at least 1 row_var")
   }
 
   # Error prevention to exam if all values are missing
-  # TODO: probably needs more
   for(variable in c(row_vars, strat, by)){
-
+    # TODO: probably needs more, such as variance = 0
     if(all(is.na(data[[variable]]))){
       stop(
         glue("All values of {variable} are missing."),
@@ -306,7 +311,7 @@ tibble_one.svydesign <- function(
     group = 'None',
     variable = 'N_weight',
     labels = 'Weighted N',
-    Overall = svytable(make.formula(strat), svy_data) %>% sum %>% round
+    Overall = svytable(make.formula(wgt_strata_name), svy_data) %>% sum %>% round
   )
 
   # make adjustments to table parameters
