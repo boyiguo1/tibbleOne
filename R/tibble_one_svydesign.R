@@ -77,6 +77,10 @@
 #'
 #' dgn <- survey::svydesign(~1, probs = ~prob, strata = ~trt, data = new.dat)
 #'
+#' # dgn$strata
+#' # dgn$prob
+#' # the variable to remove from the dataset is names(allprob)
+#'
 #' # report median albumin instead of mean
 #' # use kruskal wallis test for albumin
 #' tmp <- tibble_one.svydesign(
@@ -87,8 +91,8 @@
 #' )
 #'
 
-# data = pbc_tbl1
-# formula = ~ . - age | sex
+# svy_data = dgn
+# formula = ~ . | trt
 # meta_data = meta
 # row_vars = NULL
 # strat = NULL
@@ -119,8 +123,10 @@ tibble_one.svydesign <- function(
 
 
   # fetch the raw data from the suvdesign object
-  #TODO: Decide if we need to keep the prob variable/ sampling weight in the varibale
   data <- svy_data$variables
+  # Removing survey design information (sampling prob) from original dataset
+  if(!is.null(svy_data$allprob)) var_to_remove <- names(svy_data$allprob)
+  if(var_to_remove %in% names(data)) data %<>% select(-!!enquo(var_to_remove))
 
   # Identify row, stratification, and by variables
   if( !is.null(formula) ){
