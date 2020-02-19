@@ -70,7 +70,7 @@ subsequently be sent to different modes of output
 (see \link{to_word} and \link{to_kable}).
 }
 \description{
-\Sexpr[results=rd, stage=render]{lifecycle::badge("stable")}
+\Sexpr[results=rd, stage=render]{lifecycle::badge("experimental")}
 
 Table one is a tabular description of
 characteristics, e.g., demographics of patients in a clinical trial,
@@ -78,6 +78,8 @@ presented overall and also stratified by a categorical variable, e.g.
 treatment group.
 }
 \examples{
+library(tidyverse)
+
 data("pbc_tbl1")
 
 pbc_tbl1 \%>\% filter(!is.na(trt)) \%>\%
@@ -89,12 +91,17 @@ pbc_tbl1 \%>\% filter(!is.na(trt)) \%>\%
 
 dgn <- survey::svydesign(~1, probs = ~prob, strata = ~trt, data = new.dat)
 
+# dgn$strata
+# dgn$prob
+# the variable to remove from the dataset is names(allprob)
+
 # report median albumin instead of mean
 # use kruskal wallis test for albumin
 tmp <- tibble_one.svydesign(
   svy_data = dgn,
-  formula = ~ sex | trt,
+  formula = ~ . | trt,
   expand_binary_catgs = FALSE,
+  include_pval = FALSE
 )
 
 }
