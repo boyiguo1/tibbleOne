@@ -1,5 +1,5 @@
 
-
+# TODO: use stratified_table rather create strata from now.
 gen_tbl_value.svydesign <- function(
   svy,
   variable,
@@ -11,6 +11,8 @@ gen_tbl_value.svydesign <- function(
   include_freq,
   expand_binary_catgs
 ){
+  # stop("need to fix the strat now, using strat table rather than survey strata")
+
 
   if(var_type %in% c('numeric','integer')){
 
@@ -41,7 +43,7 @@ gen_tbl_value.svydesign <- function(
     return(output)
 
   }
-  # TODO: havn't modified for categorical data
+
   if(var_type %in% c('factor')){
 
     # warning("Do not finish yet")
@@ -80,41 +82,57 @@ ctns_tbl_value.svydesign <- function(
     #   data[['.strat']],
     #   ctns_fun
     # )
-    strata <- svy$strata %>% names()
+    # strata <- svy$strata %>% names()
 
     vals_by_group <- switch(
-          EXPR = fun_type,
-          "mean" = {survey::svyby(survey::make.formula(variable),
-                                 survey::make.formula(strata),
-                                 svy, survey::svymean) %>%
+      EXPR = fun_type,
+      "mean" =
+        {survey::svyby(survey::make.formula(variable),
+                       survey::make.formula(".strat"),
+                       svy, survey::svymean, na.rm = T) %>%
             dplyr::rename( mean = !!rlang::quo(variable)) %>%
             # TODO: make sure the trt is part of the data or it should be strata
             dplyr::transmute(trt,
                              output = paste0(adapt_round(mean), ' (',
-                                             adapt_round(se), ')')) %>%
-            spread(trt, output)},
-          "median" = {survey::svyby(survey::make.formula(variable),
-                                    survey::make.formula(strata),
-                                    svy, survey::svyquantile, quantiles=c(0.25,0.5, 0.75), ci=T) %>%
-              dplyr::rename( mean = !!rlang::quo(variable)) %>%
-              dplyr::transmute(trt,
-                               output = paste0(adapt_round(mean), ' (',
-                                               adapt_round(se), ')')) %>%
-              spread(trt, output)},
-          {survey::svyby(survey::make.formula(variable),
-                        survey::make.formula(strata),
-                        svy, survey::svymean, quantiles=c(0.25,0.5, 0.75)) %>%
-            dplyr::rename( mean = !!rlang::quo(variable)) %>%
-            dplyr::transmute(trt,
-                             output = paste0(adapt_round(mean), ' (',
-                                             adapt_round(se), ')')) %>%
-            spread(trt, output)}
-        )
+                                             adapt_round(se), ')')
+            ) %>%
+            spread(trt, output)
+        },
+      "median" = {
+        # TODO: suppress warning message, figure out why ci=T is necessary
+        survey::svyby(survey::make.formula(variable),
+                      survey::make.formula(".strat"),
+                      svy, survey::svyquantile, quantiles=c(0.25,0.5, 0.75), ci=T, na.rm = T) %>%
+          dplyr::rename( median = "0.5",
+                         q25 = "0.25",
+                         q75 = "0.75"
+          ) %>%
+          dplyr::transmute(.strat,
+                           output = paste0(
+                             adapt_round(median), ' [',
+                             adapt_round(q25),"-",
+                             adapt_round(q75) ,']')
+          ) %>%
+          spread(.strat, output)
+      },
+      {# Default
+        survey::svyby(survey::make.formula(variable),
+                      survey::make.formula(".strat"),
+                      svy, survey::svymean, na.rm = T) %>%
+          dplyr::rename( mean = !!rlang::quo(variable)) %>%
+          dplyr::transmute(.strat,
+                           output = paste0(adapt_round(mean), ' (',
+                                           adapt_round(se), ')')
+          ) %>%
+          spread(.strat, output)
+      }
+    )
     #%>% array
   }
 
   if(stratified_table & include_pval){
-
+    # TODO: Implement calculation for pvalue
+    stop("include_pval for weighted version has not implemented")
     pval <- pval_fun(
       data = svy, #data,
       variable = variable,
@@ -210,7 +228,7 @@ cmp_pval_noparm.svy <- function(data, variable, ngrps){
 catg_tbl_value.svydesign <- function(
   svy,
   variable,
- # data,
+  # data,
   stratified_table,
   include_pval=TRUE,
   include_freq=FALSE,
@@ -219,7 +237,7 @@ catg_tbl_value.svydesign <- function(
 ){
 
   # TODO: improve this to accomadate non weight strat
-  strata <- svy$strata %>% names()
+  #strata <- svy$strata %>% names()
 
   # TODO: round the estimate to integer
   counts_overall <- survey::svytable(survey::make.formula(variable), svy) %>% round()
@@ -230,7 +248,7 @@ catg_tbl_value.svydesign <- function(
   if(stratified_table){
 
     counts_by_group <- survey::svytable(
-      survey::make.formula(c(variable, strata)),
+      survey::make.formula(c(variable, ".strat")),
       # survey::make.formula(strata),
       svy
     ) %>% round()
@@ -295,7 +313,7 @@ catg_tbl_value.svydesign <- function(
   }
 
   if(stratified_table & include_pval){
-
+    stop("include_pval for weighted version has not implemented")
     n_reps <-
       if(expand_binary_catgs){
         n_groups

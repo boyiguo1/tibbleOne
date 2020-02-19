@@ -4,7 +4,7 @@
 #'
 #' @description
 #'
-#' \Sexpr[results=rd, stage=render]{lifecycle::badge("stable")}
+#' \Sexpr[results=rd, stage=render]{lifecycle::badge("experimental")}
 #'
 #' Table one is a tabular description of
 #'  characteristics, e.g., demographics of patients in a clinical trial,
@@ -91,9 +91,11 @@
 #' )
 #'
 
+# dgn <- readRDS("C:/Users/boyiguo1/Documents/GitHub/dgn.rds")
 # svy_data = dgn
 # formula = ~ . | trt
-# meta_data = meta
+# formula = ~ . | Race * Gender
+# meta_data = NULL
 # row_vars = NULL
 # strat = NULL
 # by = NULL
@@ -103,14 +105,22 @@
 # expand_binary_catgs = FALSE
 # include_pval = FALSE
 # include_freq = FALSE
+# add_perc_to_cats=T
+
+# tmp <- tibble_one.svydesign(
+#     svy_data = dgn,
+#     formula = ~ . | Race * Gender,
+#     expand_binary_catgs = FALSE,
+#     include_pval = FALSE
+#   )
 
 tibble_one.svydesign <- function(
   svy_data,
   formula = NULL,
   meta_data = NULL,
   row_vars = NULL,
-#  strat = NULL,
-#  by = NULL,
+  strat = NULL,
+  by = NULL,
   specs_table_vals = NULL,
   specs_table_tests = NULL,
   include_pval=FALSE,
@@ -132,6 +142,7 @@ tibble_one.svydesign <- function(
   # save up the strata name in the used in the survey design
   # This may coincide with the strata argument
   # It is possible this is null, be cautious
+  # TODO: it is possible
   wgt_strata_name <- svy_data$strata %>% names
 
   # Identify row, stratification, and by variables
@@ -143,8 +154,8 @@ tibble_one.svydesign <- function(
 
     tb1_vars <- list(
       row_vars = vars_select(colnames(data), !!enquo(row_vars)),
-      # strat = vars_select(colnames(data), !!enquo(strat)),
-      # by = vars_select(colnames(data), !!enquo(by))
+      strat = vars_select(colnames(data), !!enquo(strat)),
+      by = vars_select(colnames(data), !!enquo(by))
     ) %>%
       map(
         .f = function(x){
@@ -159,10 +170,9 @@ tibble_one.svydesign <- function(
     )
   }
 
-  # TODO: Error prevention here. Check if strata is null
   row_vars <- tb1_vars$row_vars
-  strat <- svy_data$strata %>% names()
-  by <- NULL
+  strat <- tb1_vars$strat
+  by <- tb1_vars$by
 
   # TODO: Error prevention: check if strat is one of the row_vars, even in the non-weighte version
 
@@ -365,11 +375,11 @@ tibble_one.svydesign <- function(
 
     # count the number of participants in each strata
     strat_table <- table(data[[strat]])
-    strat_table_wgt <- survey::svytable(make.formula(strat), svy_data) %>% round()
+
 
     # add the counts of participants in each strata to the n_obs vector
     n_obs %<>% c(strat_table)
-    n_obs_wgt %<>% c(strat_table_wgt)
+
 
 
     # formalize information about strata with a list
@@ -393,19 +403,11 @@ tibble_one.svydesign <- function(
 
   }
 
-  # modify n_obs vector to include p-value label if needed
-  if( include_pval ) {
-    n_obs %<>% c("P-value" = '')
-    n_obs_wgt %<>% c("P-value" = '')
-  }
 
-  # the top row of the table is initialized here (descr = descriptive)
-  descr_row <- vibble(n_obs)
-  n_wgt_row <- vibble(n_obs_wgt)
 
   # the original data is modified for computing table values
   # .strat is the stratifying variable
-  tbl_data = select(data, !!!select_vec)
+  tbl_data <- select(data, !!!select_vec)
 
   # abbreviations are organized into one string
   table_abbrs <- meta$data$abbr %>%
@@ -419,6 +421,10 @@ tibble_one.svydesign <- function(
   table_notes <- meta$data$note %>%
     set_names(meta$data$variable) %>%
     purrr::keep(~any(!is.na(.x)))
+
+  svy_data$variables <- tbl_data
+  strat_table_wgt <- survey::svytable(make.formula(".strat"), svy_data) %>% round()
+  n_obs_wgt %<>% c(strat_table_wgt)
 
   table_data <- meta$data %>%
     select(-c(abbr,note)) %>%
@@ -479,6 +485,17 @@ tibble_one.svydesign <- function(
     }
   }
 
+  # The reason that we move this from eariler to here is because I need use ".strat" variable to careate the weighted row
+  # modify n_obs vector to include p-value label if needed
+  if( include_pval ) {
+    n_obs %<>% c("P-value" = '')
+    n_obs_wgt %<>% c("P-value" = '')
+  }
+
+  # the top row of the table is initialized here (descr = descriptive)
+  descr_row <- vibble(n_obs)
+  n_wgt_row <- vibble(n_obs_wgt)
+
  # TODO: move n_wgt_row the first row in the table
  table_data %<>% bind_rows(descr_row, n_wgt_row, .)
 
@@ -498,6 +515,7 @@ tibble_one.svydesign <- function(
         x = variable,
         levels = c(
           'descr',
+          'N_weight',
           unique(
             c(
               setdiff(row_vars, meta$var_levels),
