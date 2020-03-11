@@ -321,7 +321,7 @@ tibble_one.svydesign <- function(
     group = 'None',
     variable = 'N_weight',
     labels = 'Weighted N',
-    Overall = survey::svytable(make.formula(wgt_strata_name), svy_data) %>% sum %>% round
+    Overall = survey::svytable(survey::make.formula(wgt_strata_name), svy_data) %>% sum %>% round
   )
 
   # make adjustments to table parameters
@@ -423,7 +423,7 @@ tibble_one.svydesign <- function(
     purrr::keep(~any(!is.na(.x)))
 
   svy_data$variables <- tbl_data
-  strat_table_wgt <- survey::svytable(make.formula(".strat"), svy_data) %>% round()
+  strat_table_wgt <- survey::svytable(survey::make.formula(".strat"), svy_data) %>% round()
   n_obs_wgt %<>% c(strat_table_wgt)
 
   table_data <- meta$data %>%
