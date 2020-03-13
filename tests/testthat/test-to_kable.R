@@ -9,8 +9,10 @@ test_that("correct inputs work", {
     set_variable_abbrs(a = c(ABC = "123")) %>%
     set_variable_notes(a = "The abbreviation is irrelevant")
 
+  tb0 <- tibble_one(data = df, formula = ~ a + b)
   tb1 <- tibble_one(data = df, formula = ~ a | b)
 
+  kb0 <- to_kable(tb0)
   kb1 <- to_kable(tb1, use_groups = TRUE)
 
   attr <- attributes(kb1)
@@ -44,7 +46,7 @@ test_that("correct inputs work", {
     c(
       "  & Overall & X & Y & X & Y & P-value",
       "No. of observations & 10 & 3 & 2 & 2 & 3 & \\$  \\$",
-      "E, % &  &  &  &  &  & \\$ 0.616 \\$",
+      "E, \\\\% &  &  &  &  &  & \\$ 0.616 \\$",
       "\\\\hspace\\{1em\\}a & 20.0 & 33.3 & 0.00 & 0.00 & 33.3 & \\$  \\$",
       "\\\\hspace\\{1em\\}b & 20.0 & 0.00 & 50.0 & 50.0 & 0.00 & \\$  \\$",
       "\\\\hspace\\{1em\\}c & 20.0 & 33.3 & 0.00 & 0.00 & 33.3 & \\$  \\$",

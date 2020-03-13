@@ -2,7 +2,7 @@ Type: Package
 Package: tibbleOne
 Title: Table One for 'Latex', 'Word', and 'Html' 'R Markdown'
     Documents
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     c(person(given = "Byron",
              family = "Jaeger",
@@ -46,7 +46,6 @@ Imports:
 Suggests: 
     rmarkdown,
     survival,
-    tidyverse,
     testthat (>= 2.1.0),
     covr
 VignetteBuilder: 
