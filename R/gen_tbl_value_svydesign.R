@@ -179,7 +179,8 @@ mean_sd.svy<-function(svy, variable_name){
   # if(class(.sd)[1] == 'try-error') .sd <- "NA"
 
   paste0(
-    adapt_round(res), ' (', adapt_round(survey::SE(res)), ')'
+    adapt_round(res), ' (',
+    survey::svyvar(survey::make.formula(variable_name), svy, na.rm = TRUE) %>% sqrt %>% adapt_round, ')'
   )
 
 }
