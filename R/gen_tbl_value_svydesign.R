@@ -90,13 +90,26 @@ ctns_tbl_value.svydesign <- function(
         {survey::svyby(survey::make.formula(variable),
                        survey::make.formula(".strat"),
                        svy, survey::svymean, na.rm = T) %>%
-            dplyr::rename( mean = !!rlang::quo(variable)) %>%
-            # TODO: make sure the trt is part of the data or it should be strata
-            dplyr::transmute(trt,
-                             output = paste0(adapt_round(mean), ' (',
-                                             adapt_round(se), ')')
+            dplyr::rename(
+              #.strat,
+              mean = !!rlang::quo(variable)
+              ) %>%
+            left_join(
+              survey::svyby(survey::make.formula(variable),
+                            survey::make.formula(".strat"),
+                            svy, survey::svyvar, na.rm = T) %>%
+                dplyr::rename(
+                  #.strat,
+                  sd = !!rlang::quo(variable)
+                  ),
+              by = ".strat"
             ) %>%
-            spread(trt, output)
+            # TODO: make sure the trt is part of the data or it should be strata
+            dplyr::transmute(.strat,
+                             output = paste0(adapt_round(mean), ' (',
+                                             adapt_round(sd %>% sqrt), ')')
+            ) %>%
+            spread(.strat, output)
         },
       "median" = {
         # TODO: suppress warning message, figure out why ci=T is necessary
@@ -116,13 +129,36 @@ ctns_tbl_value.svydesign <- function(
           spread(.strat, output)
       },
       {# Default
+        # survey::svyby(survey::make.formula(variable),
+        #               survey::make.formula(".strat"),
+        #               svy, survey::svymean, na.rm = T) %>%
+        #   dplyr::rename( mean = !!rlang::quo(variable)) %>%
+        #   dplyr::transmute(.strat,
+        #                    output = paste0(adapt_round(mean), ' (',
+        #                                    adapt_round(se), ')')
+        #   ) %>%
+        #   spread(.strat, output)
         survey::svyby(survey::make.formula(variable),
                       survey::make.formula(".strat"),
                       svy, survey::svymean, na.rm = T) %>%
-          dplyr::rename( mean = !!rlang::quo(variable)) %>%
+          dplyr::rename(
+            #.strat,
+            mean = !!rlang::quo(variable)
+          ) %>%
+          left_join(
+            survey::svyby(survey::make.formula(variable),
+                          survey::make.formula(".strat"),
+                          svy, survey::svyvar, na.rm = T) %>%
+              dplyr::rename(
+                #.strat,
+                sd = !!rlang::quo(variable)
+              ),
+            by = ".strat"
+          ) %>%
+          # TODO: make sure the trt is part of the data or it should be strata
           dplyr::transmute(.strat,
                            output = paste0(adapt_round(mean), ' (',
-                                           adapt_round(se), ')')
+                                           adapt_round(sd %>% sqrt), ')')
           ) %>%
           spread(.strat, output)
       }
