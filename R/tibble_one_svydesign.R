@@ -429,11 +429,13 @@ tibble_one.svydesign <- function(
   table_data <- meta$data %>%
     select(-c(abbr,note)) %>%
     {
-      if(stratified_table){
-        filter(., !variable %in% c(strat, by))
-      } else {
-        .
-      }
+      # if(stratified_table){
+      #   filter(., !variable %in% c(strat, by))
+      # } else {
+      #   .
+      # }
+
+      filter(., variable %in% row_vars)
     } %>%
     left_join(
       enframe(
