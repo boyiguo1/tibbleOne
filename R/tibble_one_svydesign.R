@@ -291,7 +291,7 @@ tibble_one.svydesign <- function(
 
       paste(
         # Note: change the wroding from "(standard deviation)" to "(standard error)"
-        "Table values are mean (standard error) and",
+        "Table values are estimated population mean (standard deviation) and",
         if(include_freq) "count (percent)" else "percent",
         "for continuous and categorical variables, respectively."
       )
