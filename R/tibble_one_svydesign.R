@@ -282,7 +282,7 @@ tibble_one.svydesign <- function(
 
       paste(
         # Note: change the wroding from "(standard deviation)" to "(standard error)"
-        "Table values for continuous variables are mean (standard error)",
+        "Table values for continuous variables are mean (standard deviation)",
         "or median [interquartile range]. Table values for categorical",
         "variables are", if(include_freq) "count (percent)." else "percent."
       )
@@ -574,7 +574,7 @@ tibble_one.svydesign <- function(
   attr(table_data, 'allcats') <- expand_binary_catgs
 
   # set class to include tibble_one
-  class(table_data) %<>% c('tibble_one')
+  # class(table_data) %<>% c('tibble_one')
 
   table_data
 
