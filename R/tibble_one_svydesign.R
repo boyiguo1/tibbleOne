@@ -321,7 +321,9 @@ tibble_one.svydesign <- function(
     group = 'None',
     variable = 'N_weight',
     labels = 'Weighted N',
-    Overall = survey::svytable(survey::make.formula(wgt_strata_name), svy_data) %>% sum %>% round
+    Overall = ifelse(!is.null(svy_data$prob), sum(1/svy_data$prob),
+                     stop("Survey design doesn't have sampling probability. Please use non-weighted version of TibbleOne"))
+      # survey::svytable(survey::make.formula(wgt_strata_name), svy_data) %>% sum %>% round
   )
 
   # make adjustments to table parameters
